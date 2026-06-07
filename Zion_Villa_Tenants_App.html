@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zion Villa Tenants — Property Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --bg:#f7f5f0; --surface:#ffffff; --surface2:#f0ede6; --surface3:#e8e4dc;
+  --border:#e2ddd4; --border2:#ccc8be;
+  --text:#1a1916; --text2:#5a574f; --text3:#8a877f;
+  --accent:#2d5a3d; --accent-l:#e8f0eb; --accent-m:#b8d4c0;
+  --danger:#c0392b; --danger-l:#fdf0ef;
+  --info:#1a4a8a; --info-l:#eef3fb;
+  --success:#1e7e4a; --success-l:#edf7f1;
+  --amber:#a0620d; --amber-l:#fef3e6;
+  --r:10px; --rl:16px; --rxl:20px;
+  --sh:0 2px 12px rgba(0,0,0,.06); --shl:0 8px 32px rgba(0,0,0,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ============================================================
+   SHARED SCREEN LAYER
+   ============================================================ */
+.screen{display:none;min-height:100vh}
+.screen.visible{display:block}
+#screen-entry{display:flex;min-height:100vh}
+
+/* ============================================================
+   ENTRY / ROLE SELECTION
+   ============================================================ */
+.entry-wrap{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;
+  background:linear-gradient(150deg,#1a3a27 0%,#2d5a3d 55%,#3d7a55 100%);
+}
+.entry-card{
+  background:var(--surface);border-radius:var(--rxl);padding:2.5rem 2rem;
+  width:100%;max-width:380px;box-shadow:var(--shl);
+}
+.entry-logo{text-align:center;margin-bottom:2rem}
+.entry-logo h1{font-family:'DM Serif Display',serif;font-size:30px;color:var(--accent);line-height:1.1}
+.entry-logo p{color:var(--text3);font-size:13px;margin-top:6px;letter-spacing:.3px}
+.entry-divider{display:flex;align-items:center;gap:10px;margin:1.2rem 0;color:var(--text3);font-size:12px}
+.entry-divider::before,.entry-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Tenant buttons */
+.tenant-btn{
+  display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;
+  border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);
+  cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px;
+  text-align:left;transition:all .15s;
+}
+.tenant-btn:hover{border-color:var(--accent);background:var(--accent-l)}
+.tenant-avatar{
+  width:38px;height:38px;border-radius:50%;background:var(--accent-l);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;color:var(--accent);flex-shrink:0;
+}
+.tenant-btn-info{flex:1}
+.tenant-btn-name{font-size:14px;font-weight:500;color:var(--text)}
+.tenant-btn-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.tenant-btn-badge{
+  font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;
+  background:var(--accent-l);color:var(--accent);white-space:nowrap;flex-shrink:0;
+}
+
+/* Admin PIN area */
+.admin-pin-area{margin-top:4px}
+.pin-input-row{display:flex;gap:8px;margin-bottom:8px}
+.pin-input-row input{
+  flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);
+  font-size:20px;text-align:center;letter-spacing:10px;outline:none;
+  font-family:'DM Sans',sans-serif;background:var(--surface);transition:border-color .15s;
+}
+.pin-input-row input:focus{border-color:var(--accent)}
+.btn-admin-enter{
+  background:var(--accent);color:#fff;border:none;padding:11px 20px;border-radius:var(--r);
+  font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;
+}
+.entry-err{color:var(--danger);font-size:12px;min-height:16px;margin-top:2px;text-align:center}
+
+/* ============================================================
+   ADMIN LAYOUT
+   ============================================================ */
+#screen-admin{display:none}
+#screen-admin.visible{display:flex}
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:220px;
+  background:var(--accent);color:#fff;display:flex;flex-direction:column;z-index:100;
+}
+.sb-logo{padding:1.4rem 1.2rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.15)}
+.sb-logo h2{font-family:'DM Serif Display',serif;font-size:19px;color:#fff;line-height:1.2}
+.sb-logo span{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:.8px;text-transform:uppercase}
+.sb-nav{flex:1;padding:.8rem 0;overflow-y:auto}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:11px 1.2rem;cursor:pointer;
+  font-size:14px;color:rgba(255,255,255,.7);transition:all .15s;
+  border-left:3px solid transparent;user-select:none;
+}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:rgba(255,255,255,.65);font-weight:500}
+.nav-icon{font-size:17px;width:20px;text-align:center}
+.sb-footer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,.15)}
+.btn-logout{
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border:none;
+  padding:9px 14px;border-radius:var(--r);font-size:13px;cursor:pointer;
+  width:100%;font-family:'DM Sans',sans-serif;text-align:center;
+}
+.btn-logout:hover{background:rgba(255,255,255,.18)}
+
+.admin-main{margin-left:220px;padding:2rem;min-height:100vh;width:calc(100% - 220px)}
+.apage{display:none}
+.apage.active{display:block}
+.page-hdr{margin-bottom:1.8rem}
+.page-hdr h1{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text)}
+.page-hdr p{color:var(--text2);font-size:14px;margin-top:3px}
+
+/* ============================================================
+   SHARED COMPONENTS
+   ============================================================ */
+.card{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);padding:1.4rem;margin-bottom:1.4rem;box-shadow:var(--sh)}
+.card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:1.4rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;box-shadow:var(--sh)}
+.stat-lbl{font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
+.stat-val{font-size:22px;font-weight:600;color:var(--text)}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
+.fg input,.fg select,.fg textarea{
+  padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);
+  font-size:14px;font-family:'DM Sans',sans-serif;background:var(--surface);
+  color:var(--text);outline:none;transition:border-color .15s;
+}
+.fg input:focus,.fg select:focus{border-color:var(--accent)}
+.fg input[readonly]{background:var(--surface2);color:var(--text3)}
+.fg .hint{font-size:11px;color:var(--text3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+.btn{padding:10px 18px;border-radius:var(--r);font-size:14px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn-sm{padding:7px 12px;font-size:12px}
+.btn-green{background:var(--accent);color:#fff}
+.btn-green:hover{opacity:.85}
+.btn-outline{background:transparent;color:var(--text2);border:1.5px solid var(--border)}
+.btn-outline:hover{border-color:var(--border2);background:var(--surface2)}
+.btn-danger{background:var(--danger-l);color:var(--danger);border:1px solid #f5bfbb}
+.btn-amber{background:var(--amber-l);color:var(--amber);border:1px solid #f8d9a8}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+.table-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--surface2)}
+th{padding:10px 13px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);white-space:nowrap}
+td{padding:11px 13px;border-top:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:hover td{background:var(--bg)}
+
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-green{background:var(--success-l);color:var(--success)}
+.badge-red{background:var(--danger-l);color:var(--danger)}
+.badge-amber{background:var(--amber-l);color:var(--amber)}
+.badge-gray{background:var(--surface2);color:var(--text3)}
+
+.alert{padding:11px 14px;border-radius:var(--r);font-size:13px;margin-bottom:1rem}
+.alert-info{background:var(--info-l);color:var(--info);border:1px solid #c5d8f2}
+.alert-success{background:var(--success-l);color:var(--success);border:1px solid #b5dfc9}
+.alert-danger{background:var(--danger-l);color:var(--danger);border:1px solid #f5bfbb}
+
+.divider{border:none;border-top:1px solid var(--border);margin:1.4rem 0}
+.hidden{display:none!important}
+.mt1{margin-top:.8rem}
+
+/* Meter blocks in billing */
+.meter-block{border:1.5px solid var(--border);border-radius:var(--r);padding:1.1rem;margin-bottom:10px;background:var(--bg)}
+.meter-block-title{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px}
+.meter-calc{font-size:13px;color:var(--text2);background:var(--surface);padding:8px 12px;border-radius:8px;margin-top:8px;border:1px solid var(--border)}
+.meter-calc strong{color:var(--text)}
+
+/* Invoice styles */
+.invoice-preview{background:#fff;border:1.5px solid var(--border);border-radius:var(--rl);max-width:560px;overflow:hidden;box-shadow:var(--shl)}
+.inv-head{background:var(--accent);padding:1.5rem;text-align:center}
+.inv-head h2{font-family:'DM Serif Display',serif;font-size:22px;color:#fff;letter-spacing:2px}
+.inv-head p{color:rgba(255,255,255,.65);font-size:11px;margin-top:3px;letter-spacing:.4px}
+.inv-body{padding:1.4rem}
+.inv-meta-grid{display:grid;grid-template-columns:auto 1fr;gap:0;margin-bottom:1rem;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;font-size:12px}
+.inv-meta-grid .ml{background:var(--surface2);padding:8px 12px;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}
+.inv-meta-grid .mv{padding:8px 12px;font-weight:500;border-bottom:1px solid var(--border)}
+.inv-meta-grid .ml:last-of-type,.inv-meta-grid .mv:last-of-type{border-bottom:none}
+.inv-sec-lbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:1rem 0 6px}
+.inv-meter-box{background:var(--surface2);border-radius:var(--r);padding:10px 12px;margin-bottom:4px}
+.inv-meter-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)}
+.inv-meter-row:last-of-type{border-bottom:none}
+.inv-meter-total{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--text);padding:8px 0 2px;border-top:1px solid var(--border2);margin-top:4px}
+.inv-amt-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.inv-amt-table td{padding:9px 0;border-bottom:1px solid var(--border)}
+.inv-amt-table td:last-child{text-align:right;font-weight:500}
+.inv-amt-table tr.discount td{color:var(--danger)}
+.inv-amt-table tr.inv-total td{font-weight:700;font-size:16px;color:var(--accent);border-top:2.5px solid var(--accent);border-bottom:none;padding-top:12px}
+.inv-foot{border-top:1px solid var(--border);padding:1rem 1.4rem;text-align:right}
+.inv-foot .sig-name{font-family:'DM Serif Display',serif;font-size:15px;color:var(--text)}
+.inv-foot .sig-sub{font-size:11px;color:var(--text3)}
+
+/* Config section */
+.cfg-box{border:1.5px dashed var(--border2);border-radius:var(--r);padding:1.2rem;margin-bottom:1rem}
+.cfg-box-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px}
+
+/* ============================================================
+   TENANT LAYOUT
+   ============================================================ */
+#screen-tenant{display:none}
+#screen-tenant.visible{display:block;max-width:640px;margin:0 auto;padding:1.4rem 1rem}
+
+.tenant-header{
+  background:var(--accent);border-radius:var(--rl);padding:1.2rem 1.4rem;
+  margin-bottom:1.4rem;display:flex;justify-content:space-between;align-items:center;
+}
+.th-left h2{font-family:'DM Serif Display',serif;font-size:19px;color:#fff}
+.th-left p{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.btn-tenant-logout{background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);border:none;padding:8px 14px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+.steps{display:flex;gap:8px;margin-bottom:1.4rem}
+.step-pill{flex:1;padding:10px 6px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--surface);text-align:center;font-size:12px;color:var(--text3);transition:all .2s}
+.step-pill.active{border-color:var(--accent);background:var(--accent-l);color:var(--accent);font-weight:500}
+.step-pill.done{border-color:var(--success);background:var(--success-l);color:var(--success)}
+.step-num{font-size:16px;font-weight:600;display:block;margin-bottom:1px}
+
+.t-meter-card{border:1.5px solid var(--border);border-radius:var(--r);padding:1.1rem;margin-bottom:10px}
+.t-meter-title{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px}
+.t-meter-result{margin-top:9px;background:var(--accent-l);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--accent);font-weight:500;display:flex;justify-content:space-between}
+
+.btn-full{width:100%;padding:14px;border-radius:var(--r);font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:opacity .15s;margin-top:8px}
+.btn-full-green{background:var(--accent);color:#fff}
+.btn-full-green:hover{opacity:.87}
+.btn-full-outline{background:transparent;color:var(--text2);border:1.5px solid var(--border)}
+.btn-full-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+.success-banner{background:var(--success-l);border:1.5px solid var(--success);border-radius:var(--r);padding:13px;text-align:center;color:var(--success);font-size:14px;font-weight:500;margin-bottom:1rem}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toast{
+  position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;
+  padding:12px 18px;border-radius:var(--r);font-size:13px;z-index:9999;
+  opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;max-width:320px;
+}
+#toast.show{opacity:1;transform:translateY(0)}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@media print{
+  .sidebar,.sb-footer,.no-print,#screen-entry,.page-hdr,.btn-row,
+  .tenant-header,.steps,#t-reading-sec,#t-confirm-sec,
+  nav,.alert{display:none!important}
+  .admin-main{margin-left:0;padding:0;width:100%}
+  #screen-admin.visible{display:block!important}
+  .invoice-preview,.invoice-wrap{box-shadow:none;border:1px solid #ccc;max-width:100%}
+  body{background:#fff}
+  .apage.active{display:block!important}
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+@media(max-width:768px){
+  .sidebar{width:54px}
+  .sb-logo{padding:0;height:58px;display:flex;align-items:center;justify-content:center}
+  .sb-logo h2,.sb-logo span,.nav-item span,.sb-footer .btn-logout span{display:none}
+  .nav-item{justify-content:center;padding:14px}
+  .admin-main{margin-left:54px;padding:1rem;width:calc(100% - 54px)}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .btn-logout{padding:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SCREEN 1: ENTRY — role selection
+     ============================================================ -->
+<div id="screen-entry" class="screen visible">
+  <div class="entry-wrap">
+    <div class="entry-card">
+      <div class="entry-logo">
+        <h1>Zion Villa Tenants</h1>
+        <p>Property Portal · Udaipur</p>
+      </div>
+
+      <!-- Tenant selection -->
+      <p style="font-size:12px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Select Your Apartment</p>
+      <div id="tenant-buttons"></div>
+
+      <div class="entry-divider">or</div>
+
+      <!-- Admin PIN -->
+      <p style="font-size:12px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Admin / Owner Access</p>
+      <div class="admin-pin-area">
+        <div class="pin-input-row">
+          <input type="password" id="pin-input" placeholder="· · · ·" maxlength="8" />
+          <button class="btn-admin-enter" onclick="adminLogin()">Enter</button>
+        </div>
+        <div class="entry-err" id="pin-err"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 2: ADMIN PANEL
+     ============================================================ -->
+<div id="screen-admin" class="screen">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <h2>Hiran<br>Magri</h2>
+      <span>Admin Panel</span>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-item active" onclick="adminPage('dashboard')"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+      <div class="nav-item" onclick="adminPage('billing')"><span class="nav-icon">⚡</span><span>New Bill</span></div>
+      <div class="nav-item" onclick="adminPage('invoices')"><span class="nav-icon">🧾</span><span>All Invoices</span></div>
+      <div class="nav-item" onclick="adminPage('tenants')"><span class="nav-icon">🏠</span><span>Tenants</span></div>
+      <div class="nav-item" onclick="adminPage('settings')"><span class="nav-icon">⚙️</span><span>Settings</span></div>
+    </nav>
+    <div class="sb-footer">
+      <button class="btn-logout" onclick="adminLogout()"><span>← Logout</span></button>
+    </div>
+  </div>
+
+  <div class="admin-main">
+
+    <!-- DASHBOARD -->
+    <div class="apage active" id="apage-dashboard">
+      <div class="page-hdr"><h1>Dashboard</h1><p>Property overview — Zion Villa Tenants, Udaipur</p></div>
+      <div class="stats-row" id="dash-stats"></div>
+      <div class="grid2">
+        <div class="card"><div class="card-title">🏠 Apartment Status</div><div id="apt-status"></div></div>
+        <div class="card"><div class="card-title">📋 Recent Invoices</div><div id="recent-inv"></div></div>
+      </div>
+    </div>
+
+    <!-- NEW BILL -->
+    <div class="apage" id="apage-billing">
+      <div class="page-hdr"><h1>Generate New Bill</h1><p>Enter meter readings to create a rent + electricity invoice</p></div>
+
+      <div class="card">
+        <div class="card-title">📋 Step 1 — Tenant & Date</div>
+        <div class="grid2">
+          <div class="fg"><label>Tenant / Apartment</label>
+            <select id="b-tenant" onchange="onBillTenantChange()"><option value="">— Select tenant —</option></select>
+          </div>
+          <div class="fg"><label>Bill Date</label><input type="date" id="b-date" /></div>
+        </div>
+      </div>
+
+      <div id="bill-body" class="hidden">
+        <div class="card">
+          <div class="card-title">⚡ Step 2 — Meter Readings</div>
+          <div id="b-meters"></div>
+          <hr class="divider">
+          <div class="grid3">
+            <div class="fg">
+              <label>Water Split (no. of active residents)</label>
+              <input type="number" id="b-wsplit" value="1" min="1" max="4" onchange="recalcBill()">
+              <span class="hint">How many apartments share water motor this month?</span>
+            </div>
+            <div class="fg">
+              <label>Tariff Rate (₹/unit)</label>
+              <input type="number" id="b-tariff" step="0.1" value="10.5" onchange="recalcBill()">
+            </div>
+            <div class="fg">
+              <label>Monthly Shared Govt. Bill (₹)</label>
+              <input type="number" id="b-shared" value="1000" onchange="recalcBill()">
+              <span class="hint">Split equally among active residents</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🔧 Step 3 — Fixed Charges <span style="font-size:12px;font-weight:400;color:var(--text3);">(% of metered amount · not shown to tenants)</span></div>
+          <div class="grid3">
+            <div class="fg"><label>Cess (%)</label><input type="number" id="fc-cess" value="5.7" step="0.01" onchange="recalcBill()"></div>
+            <div class="fg"><label>Fixed Charges (%)</label><input type="number" id="fc-fixed" value="15.7" step="0.01" onchange="recalcBill()"></div>
+            <div class="fg"><label>Fuel Charges (%)</label><input type="number" id="fc-fuel" value="10.18" step="0.01" onchange="recalcBill()"></div>
+            <div class="fg"><label>Tax (%)</label><input type="number" id="fc-tax" value="2.13" step="0.01" onchange="recalcBill()"></div>
+            <div class="fg"><label>Other Charges (%)</label><input type="number" id="fc-other" value="2.05" step="0.01" onchange="recalcBill()"></div>
+            <div class="fg"><label>Penalty (₹)</label><input type="number" id="fc-penalty" value="0" onchange="recalcBill()"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💰 Step 4 — Rent & Adjustments</div>
+          <div class="grid3">
+            <div class="fg"><label>Monthly Rent (₹)</label><input type="number" id="b-rent" value="0" onchange="recalcBill()"></div>
+            <div class="fg">
+              <label>Landlord's Contribution / Discount (₹)</label>
+              <input type="number" id="b-discount" value="0" onchange="recalcBill()">
+              <span class="hint">Shown on invoice as landlord's generosity</span>
+            </div>
+            <div class="fg"><label>Memo / Note</label><input type="text" id="b-memo" placeholder="Optional"></div>
+          </div>
+        </div>
+
+        <div class="card" style="border:2px solid var(--accent)">
+          <div class="card-title">📊 Live Bill Summary</div>
+          <div id="bill-summary"></div>
+        </div>
+
+        <div class="btn-row no-print">
+          <button class="btn btn-green" onclick="saveBill()">💾 Save & Generate Invoice</button>
+          <button class="btn btn-outline" onclick="previewBillInvoice()">👁 Preview Only</button>
+        </div>
+
+        <div id="admin-invoice-modal" class="hidden mt1">
+          <div class="card">
+            <div class="card-title no-print">🧾 Generated Invoice</div>
+            <div id="admin-invoice-content"></div>
+            <div class="btn-row no-print mt1">
+              <button class="btn btn-green" onclick="window.print()">🖨 Print / Save PDF</button>
+              <button class="btn btn-outline" onclick="$('admin-invoice-modal').classList.add('hidden')">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALL INVOICES -->
+    <div class="apage" id="apage-invoices">
+      <div class="page-hdr"><h1>Invoice History</h1><p>All generated invoices — all tenants</p></div>
+      <div class="card">
+        <div style="display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
+          <select id="inv-f-tenant" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;background:var(--surface);outline:none;" onchange="renderInvTable()">
+            <option value="">All Tenants</option>
+          </select>
+          <input type="month" id="inv-f-month" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;background:var(--surface);outline:none;" onchange="renderInvTable()" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Tenant</th><th>Units</th><th>Elec. Bill</th><th>Rent</th><th>Discount</th><th>Net Payable</th><th></th></tr></thead>
+            <tbody id="inv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TENANTS -->
+    <div class="apage" id="apage-tenants">
+      <div class="page-hdr"><h1>Tenant Management</h1><p>Apartments, tenants, meter assignments</p></div>
+      <div class="btn-row" style="margin-bottom:1rem;">
+        <button class="btn btn-green" onclick="openTenantForm()">+ Add New Tenant</button>
+      </div>
+      <div class="card hidden" id="tf-card">
+        <div class="card-title" id="tf-card-title">Add Tenant</div>
+        <div class="grid2">
+          <div class="fg"><label>Tenant Name</label><input type="text" id="tf-name"></div>
+          <div class="fg"><label>Apartment</label>
+            <select id="tf-apt">
+              <option value="apt1">Apartment 1</option>
+              <option value="apt2">Apartment 2</option>
+              <option value="apt3">Apartment 3 (House Owner)</option>
+              <option value="shop">Shop</option>
+            </select>
+          </div>
+          <div class="fg"><label>Monthly Rent (₹)</label><input type="number" id="tf-rent"></div>
+          <div class="fg"><label>Move-in Date</label><input type="date" id="tf-movein"></div>
+          <div class="fg"><label>Status</label>
+            <select id="tf-status"><option value="active">Active</option><option value="inactive">Vacated</option></select>
+          </div>
+          <div class="fg"><label>Notes</label><input type="text" id="tf-notes"></div>
+        </div>
+        <input type="hidden" id="tf-id">
+        <div class="btn-row mt1">
+          <button class="btn btn-green" onclick="saveTenant()">Save</button>
+          <button class="btn btn-outline" onclick="$('tf-card').classList.add('hidden')">Cancel</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr><th>Name</th><th>Apartment</th><th>Meters</th><th>Rent</th><th>Move-in</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="tenants-tbody"></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Last Meter Readings</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Meter</th><th>Last Reading</th><th>Last Bill Date</th></tr></thead>
+          <tbody id="meters-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="apage" id="apage-settings">
+      <div class="page-hdr"><h1>Settings</h1><p>OneDrive sync, default rates, admin PIN</p></div>
+
+      <div class="card">
+        <div class="card-title">☁️ OneDrive Sync (Microsoft Graph API)</div>
+        <div class="alert alert-info">Data is stored as a JSON file in your OneDrive — enabling sync across all devices.</div>
+        <div class="cfg-box">
+          <div class="cfg-box-title">Azure App Credentials</div>
+          <div class="grid2">
+            <div class="fg"><label>Tenant ID</label><input type="text" id="cfg-tid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+            <div class="fg"><label>Client ID</label><input type="text" id="cfg-cid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+            <div class="fg"><label>Client Secret</label><input type="password" id="cfg-secret" placeholder="Your app secret"></div>
+            <div class="fg"><label>OneDrive File Path</label><input type="text" id="cfg-path" value="/HiranMagri/property_data.json"></div>
+          </div>
+          <div class="btn-row mt1">
+            <button class="btn btn-green" onclick="saveODConfig()">💾 Save & Test Connection</button>
+            <button class="btn btn-outline" onclick="syncFromOD()">🔄 Pull from OneDrive</button>
+            <button class="btn btn-outline" onclick="pushToOD()">⬆ Push to OneDrive</button>
+          </div>
+          <div id="sync-status" style="margin-top:10px;font-size:13px;color:var(--text3)"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔐 Change Admin PIN</div>
+        <div class="grid2">
+          <div class="fg"><label>New PIN</label><input type="password" id="new-pin" maxlength="8" placeholder="New PIN"></div>
+          <div class="fg"><label>Confirm PIN</label><input type="password" id="confirm-pin" maxlength="8" placeholder="Confirm"></div>
+        </div>
+        <div class="btn-row mt1"><button class="btn btn-green" onclick="changePin()">Update PIN</button></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📐 Default Rates</div>
+        <div class="grid3">
+          <div class="fg"><label>Tariff Rate (₹/unit)</label><input type="number" id="def-tariff" step="0.1"></div>
+          <div class="fg"><label>Monthly Shared Govt. Bill (₹)</label><input type="number" id="def-shared"></div>
+          <div class="fg"><label>Default Water Split</label><input type="number" id="def-wsplit" min="1" max="4"></div>
+          <div class="fg"><label>Landlord Name</label><input type="text" id="def-landlord"></div>
+          <div class="fg"><label>Property Location</label><input type="text" id="def-location"></div>
+        </div>
+        <div class="btn-row mt1"><button class="btn btn-green" onclick="saveDefaults()">Save Defaults</button></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💾 Data Management</div>
+        <div class="btn-row">
+          <button class="btn btn-outline" onclick="exportJSON()">⬇ Export JSON</button>
+          <button class="btn btn-amber" onclick="$('import-file').click()">⬆ Import JSON</button>
+          <input type="file" id="import-file" accept=".json" class="hidden" onchange="handleImport(event)">
+          <button class="btn btn-green btn-sm" onclick="loadMigration()">📥 Load Clappia Migration</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /admin-main -->
+</div><!-- /screen-admin -->
+
+<!-- ============================================================
+     SCREEN 3: TENANT VIEW
+     ============================================================ -->
+<div id="screen-tenant" class="screen">
+  <div class="tenant-header">
+    <div class="th-left">
+      <h2 id="t-name-display">Tenant</h2>
+      <p id="t-apt-display">Apartment · Zion Villa Tenants</p>
+    </div>
+    <button class="btn-tenant-logout" onclick="tenantLogout()">← Back</button>
+  </div>
+
+  <div class="steps">
+    <div class="step-pill active" id="spill1"><span class="step-num">1</span>Readings</div>
+    <div class="step-pill" id="spill2"><span class="step-num">2</span>Confirm</div>
+    <div class="step-pill" id="spill3"><span class="step-num">3</span>Invoice</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="t-reading-sec">
+    <div class="card">
+      <div class="card-title">⚡ Enter This Month's Meter Readings</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;">Enter the current reading from each meter. The last reading is shown for reference.</p>
+      <div id="t-meter-inputs"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 Date of Reading</div>
+      <div class="fg"><label>Date</label><input type="date" id="t-date" style="font-size:15px;"></div>
+    </div>
+    <button class="btn-full btn-full-green" onclick="tSubmitReadings()">Review & Generate Invoice →</button>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="t-confirm-sec" class="hidden">
+    <div class="card">
+      <div class="card-title">✅ Confirm Your Readings</div>
+      <div id="t-confirm-body"></div>
+    </div>
+    <button class="btn-full btn-full-green" onclick="tConfirmSave()">Confirm & Generate Invoice ✓</button>
+    <button class="btn-full btn-full-outline" onclick="tGoBack()">← Edit Readings</button>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="t-invoice-sec" class="hidden">
+    <div class="success-banner">✅ Invoice saved. Please make payment at your earliest convenience.</div>
+    <div id="t-invoice-content"></div>
+    <button class="btn-full btn-full-outline no-print" style="margin-top:1rem" onclick="tGoHome()">← Submit Another Reading</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ---- HELPERS ---- */
+const $ = id => document.getElementById(id);
+function toast(msg, dur=3200){
+  const el=$('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),dur);
+}
+function fmtDate(d){ return d ? new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
+function n2(v){ return Math.round(v*100)/100; }
+
+/* ---- DATA LAYER ---- */
+const DK='hm_data', PK='hm_pin', CK='hm_cfg';
+
+const DEFAULTS = {
+  tenants:[
+    {id:'rpc',   name:'RPC',        apt:'apt1', rent:15000, status:'active',   movein:'2024-01-01', meters:['unit1','unit2','unit5'], notes:''},
+    {id:'sonika',name:'Sonika',     apt:'shop', rent:7000,  status:'active',   movein:'2024-01-01', meters:['unit6'],               notes:'Shop'},
+    {id:'shankar',name:'Shankar',   apt:'apt2', rent:5000,  status:'inactive', movein:'2024-01-01', meters:['unit4','unit5'],        notes:'Vacated'},
+    {id:'owner', name:'House Owner',apt:'apt3', rent:0,     status:'active',   movein:'2024-01-01', meters:['unit3'],               notes:'Owner-occupied'}
+  ],
+  meters:{
+    unit1:{label:'Unit 1',           apt:'apt1',   isWater:false, lastReading:3596.8, lastDate:'2026-05-30'},
+    unit2:{label:'Unit 2',           apt:'apt1',   isWater:false, lastReading:665.2,  lastDate:'2026-05-30'},
+    unit3:{label:'Unit 3',           apt:'apt3',   isWater:false, lastReading:0,      lastDate:''},
+    unit4:{label:'Unit 4',           apt:'apt2',   isWater:false, lastReading:247.7,  lastDate:'2025-11-01'},
+    unit5:{label:'Unit 5 (Water Motor)',apt:'common',isWater:true, lastReading:550,   lastDate:'2026-05-30'},
+    unit6:{label:'Unit 6',           apt:'shop',   isWater:false, lastReading:0,      lastDate:''}
+  },
+  invoices:[],
+  aptMeta:{
+    apt1:{label:'Apartment 1', meters:['unit1','unit2','unit5']},
+    apt2:{label:'Apartment 2', meters:['unit4','unit5']},
+    apt3:{label:'Apartment 3', meters:['unit3']},
+    shop:{label:'Shop',        meters:['unit6']}
+  },
+  settings:{
+    tariff:10.5, sharedBill:1000, waterSplit:2,
+    fcCess:5.7, fcFixed:15.7, fcFuel:10.18, fcTax:2.13, fcOther:2.05,
+    location:'Zion Villa Tenants, Udaipur', landlordName:'Mrs. Molly Varghese'
+  }
+};
+
+function getData(){
+  try{ const d=JSON.parse(localStorage.getItem(DK)); return d||deepClone(DEFAULTS); }
+  catch{ return deepClone(DEFAULTS); }
+}
+function saveData(d){ localStorage.setItem(DK,JSON.stringify(d)); tryODPush(d); }
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+function getPin(){ return localStorage.getItem(PK)||'8988'; }
+function getCfg(){ try{ return JSON.parse(localStorage.getItem(CK))||{}; }catch{ return {}; } }
+function saveCfg(c){ localStorage.setItem(CK,JSON.stringify(c)); }
+
+const APT_LABEL = {apt1:'Apartment 1',apt2:'Apartment 2',apt3:'Apartment 3',shop:'Shop'};
+
+/* ================================================================
+   ENTRY SCREEN
+   ================================================================ */
+function initEntry(){
+  const d=getData();
+  const active=d.tenants.filter(t=>t.status==='active'&&t.id!=='owner');
+  $('tenant-buttons').innerHTML=active.map(t=>`
+    <button class="tenant-btn" onclick="tenantLogin('${t.id}')">
+      <div class="tenant-avatar">${t.name.slice(0,2).toUpperCase()}</div>
+      <div class="tenant-btn-info">
+        <div class="tenant-btn-name">${t.name}</div>
+        <div class="tenant-btn-sub">${t.rent>0?'₹'+t.rent.toLocaleString()+'/month':'Owner'}</div>
+      </div>
+      <span class="tenant-btn-badge">${APT_LABEL[t.apt]||t.apt}</span>
+    </button>`).join('');
+}
+$('pin-input').addEventListener('keydown',e=>{ if(e.key==='Enter') adminLogin(); });
+
+function adminLogin(){
+  const pin=$('pin-input').value;
+  if(pin===getPin()){
+    $('pin-err').textContent='';
+    showScreen('admin');
+    initAdminApp();
+  } else {
+    $('pin-err').textContent='Incorrect PIN — please try again.';
+    $('pin-input').value='';
+  }
+}
+function adminLogout(){
+  showScreen('entry');
+  $('pin-input').value='';
+  $('pin-err').textContent='';
+}
+
+/* ================================================================
+   SCREEN SWITCHER
+   ================================================================ */
+function showScreen(name){
+  ['entry','admin','tenant'].forEach(s=>{
+    const el=$('screen-'+s);
+    el.classList.remove('visible');
+    if(s==='admin') el.style.display='none';
+  });
+  const target=$('screen-'+name);
+  target.classList.add('visible');
+  if(name==='admin') target.style.display='flex';
+}
+
+/* ================================================================
+   ADMIN — NAVIGATION
+   ================================================================ */
+function adminPage(id){
+  document.querySelectorAll('.apage').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('apage-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes(id)) n.classList.add('active');
+  });
+  if(id==='dashboard') renderDashboard();
+  if(id==='invoices')  renderInvoicesPage();
+  if(id==='tenants')   renderTenantsPage();
+  if(id==='billing')   initBillingPage();
+  if(id==='settings')  loadSettings();
+}
+function initAdminApp(){
+  renderDashboard();
+  populateBillTenantDD();
+}
+
+/* ================================================================
+   ADMIN — DASHBOARD
+   ================================================================ */
+function renderDashboard(){
+  const d=getData();
+  const paying=d.tenants.filter(t=>t.status==='active'&&t.rent>0);
+  const totalRent=paying.reduce((s,t)=>s+t.rent,0);
+  const thisM=new Date().toISOString().slice(0,7);
+  const mInvs=d.invoices.filter(i=>i.date.startsWith(thisM));
+
+  $('dash-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-lbl">Active Paying Tenants</div><div class="stat-val">${paying.length}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Monthly Rent Expected</div><div class="stat-val">₹${totalRent.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Bills This Month</div><div class="stat-val">${mInvs.length}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Total Invoices</div><div class="stat-val">${d.invoices.length}</div></div>`;
+
+  $('apt-status').innerHTML=Object.entries(d.aptMeta).map(([k,meta])=>{
+    const t=d.tenants.find(t=>t.apt===k&&t.status==='active');
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px;font-weight:500">${meta.label}</span>
+      <span class="badge ${t?'badge-green':'badge-gray'}">${t?t.name:'Vacant'}</span>
+    </div>`;
+  }).join('');
+
+  const recent=[...d.invoices].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  $('recent-inv').innerHTML=recent.length===0?'<p style="color:var(--text3);font-size:13px">No invoices yet.</p>':
+    recent.map(i=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:500">${i.tenantName}</div><div style="font-size:11px;color:var(--text3)">${fmtDate(i.date)}</div></div>
+      <div style="font-size:14px;font-weight:600;color:var(--accent)">₹${Math.round(i.netPayable).toLocaleString()}</div>
+    </div>`).join('');
+}
+
+/* ================================================================
+   ADMIN — BILLING
+   ================================================================ */
+function initBillingPage(){
+  const d=getData();
+  const s=d.settings;
+  $('b-date').value=new Date().toISOString().slice(0,10);
+  $('b-tariff').value=s.tariff;
+  $('b-shared').value=s.sharedBill;
+  $('b-wsplit').value=s.waterSplit;
+  $('fc-cess').value=s.fcCess; $('fc-fixed').value=s.fcFixed;
+  $('fc-fuel').value=s.fcFuel; $('fc-tax').value=s.fcTax; $('fc-other').value=s.fcOther;
+  populateBillTenantDD();
+}
+
+function populateBillTenantDD(){
+  const d=getData();
+  const active=d.tenants.filter(t=>t.status==='active');
+  const opts=active.map(t=>`<option value="${t.id}">${t.name} — ${APT_LABEL[t.apt]||t.apt}</option>`).join('');
+  const el=$('b-tenant'); if(el){ el.innerHTML='<option value="">— Select tenant —</option>'+opts; }
+  const el2=$('inv-f-tenant'); if(el2){
+    el2.innerHTML='<option value="">All Tenants</option>'+d.tenants.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  }
+}
+
+function onBillTenantChange(){
+  const tid=$('b-tenant').value;
+  if(!tid){ $('bill-body').classList.add('hidden'); return; }
+  const d=getData();
+  const tenant=d.tenants.find(t=>t.id===tid);
+  $('b-rent').value=tenant.rent;
+  $('bill-body').classList.remove('hidden');
+  renderBillMeterBlocks(tenant,d);
+  recalcBill();
+}
+
+function renderBillMeterBlocks(tenant,d){
+  $('b-meters').innerHTML=tenant.meters.map(mid=>{
+    const m=d.meters[mid]; if(!m) return '';
+    return `<div class="meter-block">
+      <div class="meter-block-title">${m.label}${m.isWater?' 💧 (Water Motor — shared cost)':''}</div>
+      <div class="grid3">
+        <div class="fg"><label>Last Reading</label><input type="number" id="bl-${mid}" value="${m.lastReading}" step="0.1" onchange="recalcBill()"></div>
+        <div class="fg"><label>Current Reading</label><input type="number" id="bc-${mid}" step="0.1" placeholder="Enter now…" onchange="recalcBill()"></div>
+        <div class="fg"><label>Net Units (auto)</label><input type="number" id="bn-${mid}" readonly></div>
+      </div>
+      <div class="meter-calc" id="bk-${mid}">Enter current reading above</div>
+    </div>`;
+  }).join('');
+}
+
+function recalcBill(){
+  const tid=$('b-tenant').value; if(!tid) return;
+  const d=getData();
+  const tenant=d.tenants.find(t=>t.id===tid);
+  const tariff=parseFloat($('b-tariff').value)||10.5;
+  const wsplit=parseInt($('b-wsplit').value)||1;
+  const shared=parseFloat($('b-shared').value)||0;
+  const isShop=tenant.apt==='shop';
+  let totalUnits=0, totalMetered=0, details=[];
+
+  tenant.meters.forEach(mid=>{
+    const m=d.meters[mid]; if(!m) return;
+    const last=parseFloat($('bl-'+mid)?.value)||0;
+    const curr=parseFloat($('bc-'+mid)?.value);
+    if(isNaN(curr)||curr===0){
+      if($('bn-'+mid)) $('bn-'+mid).value='';
+      if($('bk-'+mid)) $('bk-'+mid).innerHTML='Waiting for reading…';
+      return;
+    }
+    const diff=n2(curr-last);
+    const net=m.isWater?n2(diff/wsplit):diff;
+    const amt=n2(net*tariff);
+    const splitNote=m.isWater?` ÷ ${wsplit} = ${net}`:'';
+    if($('bn-'+mid)) $('bn-'+mid).value=net;
+    if($('bk-'+mid)) $('bk-'+mid).innerHTML=`${curr} − ${last} = <strong>${diff} units</strong>${splitNote} × ₹${tariff} = <strong>₹${amt}</strong>`;
+    totalUnits=n2(totalUnits+net);
+    totalMetered=n2(totalMetered+amt);
+    details.push({mid,label:m.label,isWater:m.isWater,last,curr,diff,netUnits:net,amt});
+  });
+
+  const cess=parseFloat($('fc-cess').value)||0;
+  const fixed=parseFloat($('fc-fixed').value)||0;
+  const fuel=parseFloat($('fc-fuel').value)||0;
+  const tax=parseFloat($('fc-tax').value)||0;
+  const other=parseFloat($('fc-other').value)||0;
+  const penalty=parseFloat($('fc-penalty').value)||0;
+  const fcAmt=n2(totalMetered*(cess+fixed+fuel+tax+other)/100+penalty);
+  const sharedPer=(!isShop&&shared>0)?n2(shared/wsplit):0;
+  const netLight=n2(totalMetered+fcAmt+sharedPer);
+  const rent=parseFloat($('b-rent').value)||0;
+  const discount=parseFloat($('b-discount').value)||0;
+  const gross=n2(rent+netLight);
+  const netPayable=n2(gross-discount);
+
+  window._bill={details,totalUnits,totalMetered,fcAmt,sharedPer,netLight,rent,discount,gross,netPayable,tariff,wsplit,shared};
+
+  $('bill-summary').innerHTML=`
+    <div class="grid3" style="margin-bottom:1rem">
+      <div class="stat-card"><div class="stat-lbl">Total Units</div><div class="stat-val">${totalUnits}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Metered Amount</div><div class="stat-val">₹${totalMetered.toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Fixed Charges</div><div class="stat-val">₹${fcAmt.toLocaleString()}</div></div>
+      ${sharedPer>0?`<div class="stat-card"><div class="stat-lbl">Shared Govt. Bill</div><div class="stat-val">₹${sharedPer}</div></div>`:''}
+      <div class="stat-card"><div class="stat-lbl">Net Elec. Bill</div><div class="stat-val">₹${netLight.toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Monthly Rent</div><div class="stat-val">₹${rent.toLocaleString()}</div></div>
+    </div>
+    <div style="background:var(--accent-l);border:1.5px solid var(--accent);border-radius:var(--r);padding:1rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:12px;color:var(--text2)">Gross: ₹${gross.toLocaleString()}</div>
+        ${discount>0?`<div style="font-size:12px;color:var(--danger)">− ₹${discount.toLocaleString()} landlord's contribution</div>`:''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--accent)">Net Payable</div>
+        <div style="font-size:28px;font-weight:600;color:var(--accent)">₹${Math.round(netPayable).toLocaleString()}</div>
+      </div>
+    </div>`;
+}
+
+function buildInvoiceHTML(inv,tenant,settings){
+  const mRows=inv.details.map(m=>
+    `<div class="inv-meter-row">
+      <span>${m.label}${m.isWater?' (Water ÷'+inv.wsplit+')':''}: ${m.curr} − ${m.last} = ${m.diff}${m.isWater&&inv.wsplit>1?' → '+m.netUnits:''} units</span>
+      <span>₹${m.amt}</span>
+    </div>`).join('');
+  const waterNote=inv.details.some(m=>m.isWater)?
+    `<div style="font-size:11px;color:var(--text3);margin-top:5px">💧 Water motor cost shared among ${inv.wsplit} resident(s)</div>`:'';
+
+  return `<div class="invoice-preview">
+    <div class="inv-head"><h2>RENT INVOICE</h2><p>${settings.location||'Zion Villa Tenants, Udaipur'}</p></div>
+    <div class="inv-body">
+      <div class="inv-meta-grid">
+        <div class="ml">Invoice Date</div><div class="mv">${fmtDate(inv.date)}</div>
+        <div class="ml">Tenant</div><div class="mv">${tenant.name}</div>
+        <div class="ml">Apartment</div><div class="mv">${APT_LABEL[tenant.apt]||tenant.apt}</div>
+      </div>
+      <div class="inv-sec-lbl">Meter Consumption Details</div>
+      <div class="inv-meter-box">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Formula: Current − Last Reading = Net Units × ₹${inv.tariff}/unit</div>
+        ${mRows}${waterNote}
+        <div class="inv-meter-total"><span>Total Units Consumed</span><span>${inv.totalUnits}</span></div>
+      </div>
+      <div class="inv-sec-lbl">Amount Payable</div>
+      <table class="inv-amt-table">
+        <tr><td>Monthly Rent</td><td>₹${inv.rent.toLocaleString()}</td></tr>
+        <tr><td>Total Electricity Bill</td><td>₹${inv.netLight.toLocaleString()}</td></tr>
+        ${inv.discount>0?`<tr class="discount"><td>Less: Landlord's Contribution 🙏</td><td>− ₹${inv.discount.toLocaleString()}</td></tr>`:''}
+        <tr class="inv-total"><td><strong>Net Payable</strong></td><td><strong>₹${Math.round(inv.netPayable).toLocaleString()}</strong></td></tr>
+      </table>
+      ${inv.memo?`<div style="margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text2)">Note: ${inv.memo}</div>`:''}
+    </div>
+    <div class="inv-foot"><div class="sig-name">${settings.landlordName||'Mrs. Molly Varghese'}</div><div class="sig-sub">Digitally Signed</div></div>
+  </div>`;
+}
+
+function previewBillInvoice(){
+  if(!window._bill){toast('Enter meter readings first.');return;}
+  const tid=$('b-tenant').value;
+  const d=getData();
+  const tenant=d.tenants.find(t=>t.id===tid);
+  $('admin-invoice-content').innerHTML=buildInvoiceHTML(window._bill,tenant,d.settings);
+  $('admin-invoice-modal').classList.remove('hidden');
+  $('admin-invoice-modal').scrollIntoView({behavior:'smooth'});
+}
+
+function saveBill(){
+  if(!window._bill){toast('Enter meter readings first.');return;}
+  const tid=$('b-tenant').value;
+  const date=$('b-date').value;
+  const memo=$('b-memo').value;
+  const d=getData();
+  const tenant=d.tenants.find(t=>t.id===tid);
+  const inv={id:'inv_'+Date.now(),tenantId:tid,tenantName:tenant.name,date,memo,...window._bill,createdAt:new Date().toISOString()};
+  d.invoices.unshift(inv);
+  window._bill.details.forEach(m=>{ if(d.meters[m.mid]){d.meters[m.mid].lastReading=m.curr;d.meters[m.mid].lastDate=date;} });
+  saveData(d);
+  toast('✅ Invoice saved!');
+  $('admin-invoice-content').innerHTML=buildInvoiceHTML(inv,tenant,d.settings);
+  $('admin-invoice-modal').classList.remove('hidden');
+  $('admin-invoice-modal').scrollIntoView({behavior:'smooth'});
+}
+
+/* ================================================================
+   ADMIN — INVOICES PAGE
+   ================================================================ */
+function renderInvoicesPage(){
+  populateBillTenantDD();
+  renderInvTable();
+}
+function renderInvTable(){
+  const d=getData();
+  const ft=$('inv-f-tenant')?.value||'';
+  const fm=$('inv-f-month')?.value||'';
+  let rows=[...d.invoices];
+  if(ft) rows=rows.filter(i=>i.tenantId===ft);
+  if(fm) rows=rows.filter(i=>i.date.startsWith(fm));
+  rows.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  $('inv-tbody').innerHTML=rows.length===0?
+    `<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:2rem">No invoices found.</td></tr>`:
+    rows.map(i=>`<tr>
+      <td>${fmtDate(i.date)}</td>
+      <td style="font-weight:500">${i.tenantName}</td>
+      <td>${i.totalUnits||0}</td>
+      <td>₹${(i.netLight||0).toLocaleString()}</td>
+      <td>₹${(i.rent||0).toLocaleString()}</td>
+      <td>${i.discount>0?'₹'+i.discount.toLocaleString():'—'}</td>
+      <td style="font-weight:600;color:var(--accent)">₹${Math.round(i.netPayable||0).toLocaleString()}</td>
+      <td><button class="btn btn-sm btn-outline" onclick="openSavedInvoice('${i.id}')">View</button></td>
+    </tr>`).join('');
+}
+function openSavedInvoice(id){
+  const d=getData();
+  const inv=d.invoices.find(i=>i.id===id);
+  if(!inv) return;
+  const tenant=d.tenants.find(t=>t.id===inv.tenantId)||{name:inv.tenantName,apt:'apt1'};
+  adminPage('billing');
+  $('admin-invoice-content').innerHTML=buildInvoiceHTML(inv,tenant,d.settings);
+  $('admin-invoice-modal').classList.remove('hidden');
+  setTimeout(()=>$('admin-invoice-modal').scrollIntoView({behavior:'smooth'}),150);
+}
+
+/* ================================================================
+   ADMIN — TENANTS PAGE
+   ================================================================ */
+function renderTenantsPage(){
+  const d=getData();
+  $('tenants-tbody').innerHTML=d.tenants.map(t=>`<tr>
+    <td style="font-weight:500">${t.name}</td>
+    <td>${APT_LABEL[t.apt]||t.apt}</td>
+    <td style="font-size:12px;color:var(--text3)">${t.meters.join(', ')}</td>
+    <td>${t.rent>0?'₹'+t.rent.toLocaleString():'—'}</td>
+    <td style="font-size:12px">${t.movein||'—'}</td>
+    <td><span class="badge ${t.status==='active'?'badge-green':'badge-red'}">${t.status==='active'?'Active':'Vacated'}</span></td>
+    <td><div style="display:flex;gap:6px">
+      <button class="btn btn-sm btn-outline" onclick="editTenant('${t.id}')">Edit</button>
+      <button class="btn btn-sm ${t.status==='active'?'btn-danger':'btn-amber'}" onclick="toggleStatus('${t.id}')">${t.status==='active'?'Deactivate':'Reactivate'}</button>
+    </div></td>
+  </tr>`).join('');
+  $('meters-tbody').innerHTML=Object.entries(d.meters).map(([id,m])=>`<tr>
+    <td style="font-weight:500">${m.label}</td>
+    <td>${m.lastReading}</td>
+    <td style="color:var(--text3);font-size:12px">${fmtDate(m.lastDate)||'—'}</td>
+  </tr>`).join('');
+}
+function openTenantForm(){ $('tf-card').classList.remove('hidden'); $('tf-id').value=''; $('tf-card-title').textContent='Add Tenant'; ['tf-name','tf-rent','tf-movein','tf-notes'].forEach(id=>{$(id).value='';}); }
+function editTenant(tid){
+  const d=getData(); const t=d.tenants.find(t=>t.id===tid);
+  $('tf-card').classList.remove('hidden'); $('tf-card-title').textContent='Edit Tenant';
+  $('tf-id').value=tid; $('tf-name').value=t.name; $('tf-apt').value=t.apt;
+  $('tf-rent').value=t.rent; $('tf-movein').value=t.movein;
+  $('tf-status').value=t.status; $('tf-notes').value=t.notes;
+}
+function saveTenant(){
+  const d=getData(); const tid=$('tf-id').value;
+  const apt=$('tf-apt').value;
+  const t={id:tid||'t_'+Date.now(),name:$('tf-name').value,apt,rent:parseFloat($('tf-rent').value)||0,movein:$('tf-movein').value,status:$('tf-status').value,notes:$('tf-notes').value,meters:d.aptMeta[apt]?.meters||[]};
+  if(tid){const i=d.tenants.findIndex(x=>x.id===tid);d.tenants[i]=t;}else d.tenants.push(t);
+  saveData(d); $('tf-card').classList.add('hidden'); renderTenantsPage(); toast('Tenant saved!');
+}
+function toggleStatus(tid){
+  const d=getData(); const t=d.tenants.find(t=>t.id===tid);
+  t.status=t.status==='active'?'inactive':'active';
+  saveData(d); renderTenantsPage(); toast(`Tenant ${t.status==='active'?'reactivated':'deactivated'}.`);
+}
+
+/* ================================================================
+   ADMIN — SETTINGS
+   ================================================================ */
+function loadSettings(){
+  const cfg=getCfg();
+  if(cfg.tenantId) $('cfg-tid').value=cfg.tenantId;
+  if(cfg.clientId) $('cfg-cid').value=cfg.clientId;
+  if(cfg.clientSecret) $('cfg-secret').value=cfg.clientSecret;
+  if(cfg.filePath) $('cfg-path').value=cfg.filePath;
+  const d=getData(); const s=d.settings;
+  $('def-tariff').value=s.tariff; $('def-shared').value=s.sharedBill;
+  $('def-wsplit').value=s.waterSplit; $('def-landlord').value=s.landlordName; $('def-location').value=s.location;
+}
+function saveODConfig(){
+  const cfg={tenantId:$('cfg-tid').value,clientId:$('cfg-cid').value,clientSecret:$('cfg-secret').value,filePath:$('cfg-path').value};
+  saveCfg(cfg); $('sync-status').textContent='⏳ Testing connection…'; syncFromOD();
+}
+function saveDefaults(){
+  const d=getData(); const s=d.settings;
+  s.tariff=parseFloat($('def-tariff').value); s.sharedBill=parseFloat($('def-shared').value);
+  s.waterSplit=parseInt($('def-wsplit').value); s.landlordName=$('def-landlord').value; s.location=$('def-location').value;
+  saveData(d); toast('Defaults saved!');
+}
+function changePin(){
+  const np=$('new-pin').value; const cp=$('confirm-pin').value;
+  if(!np){toast('Enter a new PIN.');return;} if(np!==cp){toast('PINs do not match!');return;}
+  localStorage.setItem(PK,np); toast('PIN updated!'); $('new-pin').value=''; $('confirm-pin').value='';
+}
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(getData(),null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='hiran_magri_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+function handleImport(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=ev=>{ try{saveData(JSON.parse(ev.target.result));toast('Imported!');renderDashboard();}catch{toast('Invalid JSON.');} }; r.readAsText(f);
+}
+
+/* ================================================================
+   MIGRATION — historical Clappia data
+   ================================================================ */
+function loadMigration(){
+  const d=getData();
+  const records=[
+    {id:'rpc24',tenantId:'rpc',tenantName:'RPC',date:'2026-05-30',memo:'',totalUnits:262.1,totalMetered:2752,fcAmt:357.6,sharedPer:119.2,netLight:2871.2,rent:15000,discount:500,gross:17871.2,netPayable:17371,tariff:10.5,wsplit:1,shared:1000,details:[{mid:'unit1',label:'Unit 1',isWater:false,last:3368.8,curr:3596.8,diff:228,netUnits:228,amt:2394},{mid:'unit2',label:'Unit 2',isWater:false,last:659.2,curr:665.2,diff:6,netUnits:6,amt:63},{mid:'unit5',label:'Unit 5 (Water Motor)',isWater:true,last:521.9,curr:550,diff:28.1,netUnits:28.1,amt:295.05}],createdAt:'2026-05-30T00:00:00Z'},
+    {id:'rpc23',tenantId:'rpc',tenantName:'RPC',date:'2026-04-02',memo:'',totalUnits:337.53,totalMetered:3544,fcAmt:357.6,sharedPer:119.2,netLight:3663.2,rent:0,discount:500,gross:3663.2,netPayable:3163,tariff:10.5,wsplit:1,shared:1000,details:[{mid:'unit1',label:'Unit 1',isWater:false,last:3078,curr:3368.8,diff:290.8,netUnits:290.8,amt:3053.4},{mid:'unit2',label:'Unit 2',isWater:false,last:644.7,curr:659,diff:14.29,netUnits:14.29,amt:150.05},{mid:'unit5',label:'Unit 5 (Water Motor)',isWater:true,last:457,curr:521.9,diff:32.44,netUnits:32.44,amt:340.62}],createdAt:'2026-04-02T00:00:00Z'},
+    {id:'rpc22',tenantId:'rpc',tenantName:'RPC',date:'2026-01-01',memo:'',totalUnits:113.39,totalMetered:1190,fcAmt:429.12,sharedPer:143.04,netLight:1333.04,rent:15000,discount:500,gross:16333.04,netPayable:15833,tariff:10.5,wsplit:1,shared:1000,details:[{mid:'unit1',label:'Unit 1',isWater:false,last:2891,curr:2990.3,diff:99.3,netUnits:99.3,amt:1042.65},{mid:'unit2',label:'Unit 2',isWater:false,last:633.9,curr:639.8,diff:5.89,netUnits:5.89,amt:61.85},{mid:'unit5',label:'Unit 5 (Water Motor)',isWater:true,last:427.9,curr:444.3,diff:8.2,netUnits:8.2,amt:86.1}],createdAt:'2026-01-01T00:00:00Z'},
+    {id:'shankar20',tenantId:'shankar',tenantName:'Shankar',date:'2025-11-01',memo:'Final bill — vacated',totalUnits:92.69,totalMetered:973,fcAmt:643.68,sharedPer:214.55,netLight:1187.55,rent:11250,discount:0,gross:12437.55,netPayable:7937,tariff:10.5,wsplit:2,shared:1000,details:[{mid:'unit4',label:'Unit 4',isWater:false,last:181,curr:247.7,diff:66.69,netUnits:66.69,amt:700.25},{mid:'unit5',label:'Unit 5 (Water Motor)',isWater:true,last:408,curr:460,diff:26,netUnits:26,amt:273}],createdAt:'2025-11-01T00:00:00Z'},
+    {id:'rpc19',tenantId:'rpc',tenantName:'RPC',date:'2025-09-01',memo:'',totalUnits:120.33,totalMetered:1263,fcAmt:357.6,sharedPer:119.2,netLight:1382.2,rent:15000,discount:0,gross:16382.2,netPayable:16382,tariff:10.5,wsplit:1,shared:1000,details:[{mid:'unit1',label:'Unit 1',isWater:false,last:2781,curr:2891,diff:110,netUnits:110,amt:1155},{mid:'unit2',label:'Unit 2',isWater:false,last:630,curr:633.9,diff:3.89,netUnits:3.89,amt:40.85},{mid:'unit5',label:'Unit 5 (Water Motor)',isWater:true,last:415,curr:427.9,diff:6.44,netUnits:6.44,amt:67.62}],createdAt:'2025-09-01T00:00:00Z'},
+  ];
+  const existing=new Set(d.invoices.map(i=>i.id));
+  let added=0;
+  records.forEach(r=>{ if(!existing.has(r.id)){d.invoices.push(r);added++;} });
+  saveData(d); renderDashboard(); toast(`Migration done — ${added} records added.`);
+}
+
+/* ================================================================
+   ONEDRIVE SYNC
+   ================================================================ */
+async function getODToken(){
+  const cfg=getCfg();
+  if(!cfg.tenantId||!cfg.clientId||!cfg.clientSecret) return null;
+  try{
+    const r=await fetch(`https://login.microsoftonline.com/${cfg.tenantId}/oauth2/v2.0/token`,{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({grant_type:'client_credentials',client_id:cfg.clientId,client_secret:cfg.clientSecret,scope:'https://graph.microsoft.com/.default'})
+    });
+    const j=await r.json(); return j.access_token||null;
+  }catch{return null;}
+}
+async function pushToOD(){
+  const status=$('sync-status'); if(status) status.textContent='⏳ Pushing to OneDrive…';
+  const token=await getODToken();
+  if(!token){if(status) status.textContent='❌ Auth failed — check credentials.';return;}
+  const cfg=getCfg();
+  try{
+    await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:${cfg.filePath}:/content`,{
+      method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(getData())
+    });
+    if(status) status.textContent='✅ Pushed to OneDrive — '+new Date().toLocaleTimeString();
+  }catch{if(status) status.textContent='❌ Push failed.';}
+}
+async function syncFromOD(){
+  const status=$('sync-status'); if(status) status.textContent='⏳ Pulling from OneDrive…';
+  const token=await getODToken();
+  if(!token){if(status) status.textContent='❌ Auth failed — check credentials.';return;}
+  const cfg=getCfg();
+  try{
+    const r=await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:${cfg.filePath}:/content`,{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    if(r.ok){
+      const data=await r.json(); localStorage.setItem(DK,JSON.stringify(data));
+      if(status) status.textContent='✅ Pulled from OneDrive — '+new Date().toLocaleTimeString();
+      renderDashboard(); toast('Data synced from OneDrive!');
+    } else {
+      if(status) status.textContent='⚠️ File not found on OneDrive. It will be created on next save.';
+    }
+  }catch{if(status) status.textContent='❌ Sync failed — check network.';}
+}
+async function tryODPush(d){
+  const cfg=getCfg(); if(!cfg.clientId) return;
+  const token=await getODToken(); if(!token) return;
+  try{
+    await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:${cfg.filePath}:/content`,{
+      method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(d)
+    });
+  }catch{}
+}
+
+/* ================================================================
+   TENANT VIEW
+   ================================================================ */
+let _tid=null, _pendingBill=null;
+
+function tenantLogin(tid){
+  const d=getData();
+  const t=d.tenants.find(x=>x.id===tid);
+  if(!t||t.status!=='active'){toast('Access not available.');return;}
+  _tid=tid;
+  $('t-name-display').textContent=t.name;
+  $('t-apt-display').textContent=(APT_LABEL[t.apt]||t.apt)+' · Zion Villa Tenants';
+  $('t-date').value=new Date().toISOString().slice(0,10);
+  renderTMeterInputs(t,d);
+  tSetStep(1);
+  showScreen('tenant');
+  $('t-reading-sec').classList.remove('hidden');
+  $('t-confirm-sec').classList.add('hidden');
+  $('t-invoice-sec').classList.add('hidden');
+}
+
+function tenantLogout(){
+  _tid=null; _pendingBill=null;
+  showScreen('entry');
+}
+
+function renderTMeterInputs(tenant,d){
+  $('t-meter-inputs').innerHTML=tenant.meters.map(mid=>{
+    const m=d.meters[mid]; if(!m) return '';
+    return `<div class="t-meter-card">
+      <div class="t-meter-title">${m.isWater?'💧':'⚡'} ${m.label}${m.isWater?' <span style="font-size:11px;color:var(--text3);font-weight:400">(Water motor — shared cost)</span>':''}</div>
+      <div class="grid2">
+        <div class="fg"><label>Last Reading</label><input type="number" id="tl-${mid}" value="${m.lastReading}" readonly></div>
+        <div class="fg"><label>Current Reading ✏️</label><input type="number" id="tc-${mid}" step="0.1" placeholder="e.g. ${Math.round(m.lastReading+80)}" oninput="tLiveCalc('${mid}')"></div>
+      </div>
+      <div class="t-meter-result hidden" id="tr-${mid}">
+        <span>Units this month</span><span id="trv-${mid}">—</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function tLiveCalc(mid){
+  const last=parseFloat($('tl-'+mid)?.value)||0;
+  const curr=parseFloat($('tc-'+mid)?.value);
+  const el=$('tr-'+mid); const vEl=$('trv-'+mid);
+  if(!isNaN(curr)&&curr>last){ el.classList.remove('hidden'); vEl.textContent=n2(curr-last)+' units'; }
+  else el.classList.add('hidden');
+}
+
+function tSubmitReadings(){
+  if(!_tid) return;
+  const d=getData();
+  const tenant=d.tenants.find(t=>t.id===_tid);
+  const s=d.settings;
+  let ok=true, details=[];
+  tenant.meters.forEach(mid=>{
+    const m=d.meters[mid]; if(!m) return;
+    const last=parseFloat($('tl-'+mid)?.value)||0;
+    const curr=parseFloat($('tc-'+mid)?.value);
+    if(isNaN(curr)||curr===0){ok=false;return;}
+    if(curr<last){toast(`⚠️ ${m.label}: current reading is less than last reading.`);ok=false;return;}
+    const diff=n2(curr-last);
+    const net=m.isWater?n2(diff/s.waterSplit):diff;
+    const amt=n2(net*s.tariff);
+    details.push({mid,label:m.label,isWater:m.isWater,last,curr,diff,netUnits:net,amt});
+  });
+  if(!ok){toast('Please enter all meter readings correctly.');return;}
+
+  const isShop=tenant.apt==='shop';
+  const totalUnits=n2(details.reduce((s,m)=>s+m.netUnits,0));
+  const totalMetered=n2(details.reduce((s,m)=>s+m.amt,0));
+  const fcPct=s.fcCess+s.fcFixed+s.fcFuel+s.fcTax+s.fcOther;
+  const fcAmt=n2(totalMetered*fcPct/100);
+  const sharedPer=(!isShop&&s.sharedBill>0)?n2(s.sharedBill/s.waterSplit):0;
+  const netLight=n2(totalMetered+fcAmt+sharedPer);
+  const rent=tenant.rent;
+  const discount=0;
+  const gross=n2(rent+netLight);
+  const netPayable=n2(gross-discount);
+
+  _pendingBill={details,totalUnits,totalMetered,fcAmt,sharedPer,netLight,rent,discount,gross,netPayable,tariff:s.tariff,wsplit:s.waterSplit,shared:s.sharedBill};
+
+  $('t-confirm-body').innerHTML=`
+    <div style="margin-bottom:1rem">
+      ${details.map(m=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px">
+        <span>${m.isWater?'💧':'⚡'} ${m.label}</span>
+        <span style="font-weight:500">${m.diff} units${m.isWater&&s.waterSplit>1?' (your share: '+m.netUnits+')':''}</span>
+      </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:600"><span>Total Units</span><span>${totalUnits}</span></div>
+    </div>
+    <div style="background:var(--accent-l);border-radius:var(--r);padding:1rem">
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>Electricity Bill</span><span>₹${netLight.toLocaleString()}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>Monthly Rent</span><span>₹${rent.toLocaleString()}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;padding-top:10px;border-top:1px solid var(--accent-m);margin-top:6px;color:var(--accent)">
+        <span>Total Payable</span><span>₹${Math.round(netPayable).toLocaleString()}</span>
+      </div>
+    </div>`;
+
+  tSetStep(2);
+  $('t-reading-sec').classList.add('hidden');
+  $('t-confirm-sec').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function tConfirmSave(){
+  if(!_pendingBill) return;
+  const d=getData();
+  const tenant=d.tenants.find(t=>t.id===_tid);
+  const date=$('t-date').value;
+  const inv={id:'inv_'+Date.now(),tenantId:_tid,tenantName:tenant.name,date,memo:'',..._pendingBill,createdAt:new Date().toISOString()};
+  d.invoices.unshift(inv);
+  _pendingBill.details.forEach(m=>{ if(d.meters[m.mid]){d.meters[m.mid].lastReading=m.curr;d.meters[m.mid].lastDate=date;} });
+  saveData(d);
+  $('t-invoice-content').innerHTML=buildInvoiceHTML(inv,tenant,d.settings);
+  tSetStep(3);
+  $('t-confirm-sec').classList.add('hidden');
+  $('t-invoice-sec').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function tGoBack(){
+  tSetStep(1);
+  $('t-confirm-sec').classList.add('hidden');
+  $('t-reading-sec').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function tGoHome(){
+  tSetStep(1);
+  $('t-invoice-sec').classList.add('hidden');
+  $('t-reading-sec').classList.remove('hidden');
+  if(_tid){const d=getData();const t=d.tenants.find(x=>x.id===_tid);if(t) renderTMeterInputs(t,d);}
+  window.scrollTo(0,0);
+}
+function tSetStep(n){
+  [1,2,3].forEach(i=>{
+    const el=$('spill'+i);
+    el.className='step-pill'+(i===n?' active':i<n?' done':'');
+  });
+}
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+initEntry();
+</script>
+</body>
+</html>
